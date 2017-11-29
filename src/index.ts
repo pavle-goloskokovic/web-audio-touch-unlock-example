@@ -3,10 +3,16 @@ import webAudioTouchUnlock from 'web-audio-touch-unlock';
 let loaded = false;
 let locked = true;
 let userUnlocked = false;
+let errored = false;
 
 let context = new ((<any>window).AudioContext || (<any>window).webkitAudioContext)();
 
 webAudioTouchUnlock(context).then((unlocked: boolean) => {
+
+        if(errored)
+        {
+            return;
+        }
 
         locked = false;
         userUnlocked = unlocked;
@@ -30,25 +36,31 @@ webAudioTouchUnlock(context).then((unlocked: boolean) => {
         }
     },
     (reason: any) => {
-        // TODO print error
-        console.log(reason);
+
+        errored = true;
+
+        printError(reason);
     }
 );
-
-// ERROR!
-// [error message]
-/*Seems like this approach can not be used with current ' +
-'implementation of AudioContext. We\'re sorry about that, however you can open an issue here: ' +
-'https://github.com/pavle-goloskokovic/web-audio-touch-unlock/issues and we\'ll try to sort it out.');*/
 
 let request = new XMLHttpRequest();
 request.open('GET', 'assets/audio/3667624464.mp3', true);
 request.responseType = 'arraybuffer';
 request.onload = () =>
 {
+    if(errored)
+    {
+        return;
+    }
+
     setMessage('status', 'decoding');
 
     context.decodeAudioData(request.response, (buffer: AudioBuffer) => {
+
+            if(errored)
+            {
+                return;
+            }
 
             let source = context.createBufferSource();
             source.buffer = buffer;
@@ -72,12 +84,17 @@ request.onload = () =>
             }
         },
         (e: ErrorEvent) => {
-            // TODO print error
-            console.log("Error with decoding audio data" + e);
+
+            errored = true;
+
+            printError(e);
         }
     );
 };
 request.send();
+
+
+// UI relevant logic
 
 let positionFooter = () =>
 {
@@ -100,14 +117,38 @@ let setMessage = (id: string, key: string) =>
         waiting:  `Waiting for touch unlock...`
     };
 
-    let element = document.getElementById(id);
-    element && (element.textContent = messages[key]);
+    let element = <HTMLElement>document.getElementById(id);
+    element.textContent = messages[key];
 
     positionFooter();
 };
 
 setMessage('message', 'tap');
 setMessage('status', 'loading');
+
+let resizeErrors = () =>
+{
+    let row = <HTMLElement>document.getElementById('row');
+    let errors = document.getElementsByClassName('error-message');
+
+    for (let i=0; i<errors.length; i++)
+    {
+        (<HTMLElement>errors[i]).style.width = (row.offsetWidth * 0.7) + 'px';
+    }
+};
+
+let printError = (error: any) =>
+{
+    let message = <HTMLElement>document.getElementById('message');
+    message.innerHTML = `<span class="error">ERROR!</span><br><br><span class="error-message">${error}</span>`;
+
+    let status = <HTMLElement>document.getElementById('status');
+    status.innerHTML = `<span class="error-message">Seems like this approach can't be used with current implementation of Web Audio API. We're sorry about that, however you can open an issue <a href="https://github.com/pavle-goloskokovic/web-audio-touch-unlock/issues">here</a> and we'll try to sort it out.</span>`;
+
+    resizeErrors();
+
+    positionFooter();
+};
 
 window.onblur = () =>
 {
@@ -126,16 +167,18 @@ window.onfocus = () =>
 
 window.onload = window.onresize = (e: Event) =>
 {
-    let pre = document.getElementsByTagName('pre')[0];
+    let row = <HTMLElement>document.getElementById('row');
     let scale = 1;
 
     if (window.innerWidth <= 450)
     {
         let margin = 8;
-        scale = window.innerWidth / (pre.offsetWidth + 2*margin);
+        scale = window.innerWidth / (row.offsetWidth + 2*margin);
     }
 
     document.body.style.fontSize = `${scale}em`;
+
+    resizeErrors();
 
     positionFooter();
 };
