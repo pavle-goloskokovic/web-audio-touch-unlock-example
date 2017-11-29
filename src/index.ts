@@ -79,22 +79,31 @@ request.onload = () =>
 };
 request.send();
 
+let positionFooter = () =>
+{
+    let pre = document.getElementsByTagName('pre')[0];
+    let footer = document.getElementsByTagName('footer')[0];
+
+    footer.style.bottom = Math.min(window.innerHeight - pre.offsetHeight, 0) + 'px';
+};
+
 let setMessage = (id: string, key: string) =>
 {
     let messages: { [key: string]: string } = {
-        tap:      `         Tap anywhere to unlock...`,
-        loading:  `             Loading audio...`,
-        there:    `              There you go!`,
-        playing:  `        Playing sweet, sweet music!`,
-        abit:     `            Just a bit more...`,
-        fine:     `             You're fine here,` + `\n` +
-                  `         try it on an iOS device.`,
-        decoding: `             Decoding audio... `,
-        waiting:  `        Waiting for touch unlock...`
+        tap:      `Tap anywhere to unlock...`,
+        loading:  `Loading audio...`,
+        there:    `There you go!`,
+        playing:  `Playing sweet, sweet music!`,
+        abit:     `Just a bit more...`,
+        fine:     `You're fine here,\ntry it on an iOS device.`,
+        decoding: `Decoding audio...`,
+        waiting:  `Waiting for touch unlock...`
     };
 
     let element = document.getElementById(id);
     element && (element.textContent = messages[key]);
+
+    positionFooter();
 };
 
 setMessage('message', 'tap');
@@ -113,4 +122,20 @@ window.onfocus = () =>
     if(!locked) {
         context.resume();
     }
+};
+
+window.onload = window.onresize = (e: Event) =>
+{
+    let pre = document.getElementsByTagName('pre')[0];
+    let scale = 1;
+
+    if (window.innerWidth <= 450)
+    {
+        let margin = 8;
+        scale = window.innerWidth / (pre.offsetWidth + 2*margin);
+    }
+
+    document.body.style.fontSize = `${scale}em`;
+
+    positionFooter();
 };
