@@ -37,8 +37,8 @@
     "web-audio-touch-unlock": "github:pavle-goloskokovic/web-audio-touch-unlock"
   },
   "devDependencies": {
-    "ts-loader": "^3.1.1",
-    "typescript": "^2.6.1",
+    "ts-loader": "^3.2.0",
+    "typescript": "^2.6.2",
     "webpack": "^3.8.1"
   }
 }
